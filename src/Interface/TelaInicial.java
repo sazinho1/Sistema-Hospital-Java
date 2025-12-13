@@ -2,10 +2,10 @@ package Interface;
 
 import java.awt.*;
 
-import javax.imageio.plugins.tiff.FaxTIFFTagSet;
 import javax.print.attribute.standard.MediaSize.NA;
 import javax.swing.*;
 
+import Controlador.GerenciadorClinica;
 import Modelo.ClinicaException;
 import Modelo.Paciente;
 
@@ -14,6 +14,10 @@ public class TelaInicial extends JFrame {
     // O CardLayout é pra gerenciar a troca entre cadastro e login
     private CardLayout cardLayout;
     private JPanel painelPrincipal;
+
+    private GerenciadorClinica gerenciador;
+    private java.util.ArrayList<Paciente> listaDePacientes; //Tem que tar escrito o java util pros botoes funcionarem
+    private java.util.ArrayList<Modelo.Medico> listaDeMedicos;
 
     public TelaInicial() {
         // config basica da janela
@@ -25,6 +29,11 @@ public class TelaInicial extends JFrame {
         // inicializa o cardlayout e o painel principal
         cardLayout = new CardLayout();
         painelPrincipal = new JPanel(cardLayout);
+        gerenciador = new GerenciadorClinica();
+        
+        // Carrega os dados dos arquivos assim que a janela abre
+        listaDePacientes = gerenciador.carregarArquivoPacientes();
+        listaDeMedicos = gerenciador.carregarArquivoMedicos();
 
         // cria os paineis (cartas)
         JPanel cartaLogin = criarPainelLogin();
@@ -106,59 +115,55 @@ public class TelaInicial extends JFrame {
         titulo.setFont(new Font("Arial", Font.BOLD, 20));
         titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // ... (Adicione os campos de cadastro aqui igual ao login) ...
+        // Pega os textos pra salvar no arquivo
+        JTextField txtNome = new JTextField();
+        JTextField txtLogin = new JTextField();
+        JPasswordField txtSenha = new JPasswordField();
+        JTextField txtIdade = new JTextField();
+
+        // Adiciona eles visualmente no painel
+        painel.add(new JLabel("Nome Completo:"));
+        painel.add(txtNome);
+
+        painel.add(new JLabel("Idade:"));
+        painel.add(txtIdade);
+
+        painel.add(new JLabel("Login de Acesso:"));
+        painel.add(txtLogin);
+
+        painel.add(new JLabel("Senha:"));
+        painel.add(txtSenha);
+
+        painel.add(Box.createVerticalStrut(20));
 
         JButton btnCadastrar = new JButton("Cadastrar");
-
+        //Logica do botão de cadastrar 
         btnCadastrar.addActionListener(e -> {
     
             try {
-                // Primeiro: Pegamos os dados da tela (JTextFields)
                 String nome = txtNome.getText();
                 String login = txtLogin.getText();
                 String senha = new String(txtSenha.getPassword());
                 int idade = Integer.parseInt(txtIdade.getText()); // Cuidado: isso pode dar erro se digitar letras!
-                String plano = null; // Lógica do plano aqui...
+                String plano = null; FAlTANDO IMPLEMENTAR A LOGICA COMPLETA PARA ESSE PLANO
+                
 
-                // Segundo: Criamos o objeto
                 Paciente novoPaciente = new Paciente(nome, login, senha, plano, idade);
-
-                // Terceiro: Adicionamos na lista
                 listaDePacientes.add(novoPaciente);
-
-                // --- O MOMENTO CRÍTICO ---
-                // Chamamos o método PERIGOSO que pode lançar a ClinicaException.
-                // Se der erro aqui, o Java PULA imediatamente para o 'catch' lá embaixo.
                 gerenciador.salvarArquivoPacientes(listaDePacientes);
 
-                // Se chegou aqui, é porque salvou com sucesso!
-                // Então mostramos o aviso de sucesso (ícone de 'i' azul)
-                JOptionPane.showMessageDialog(null,
-                        "Paciente cadastrado com sucesso!",
-                        "Sucesso",
-                        JOptionPane.INFORMATION_MESSAGE);
+                // Se chegou aqui, é pq deu certo, ai ele puxa um painel com o retorno positivo
+                JOptionPane.showMessageDialog(null,"Paciente cadastrado com sucesso!","Sucesso",JOptionPane.INFORMATION_MESSAGE);
 
                 // Opcional: Limpar os campos ou voltar para o login
                 txtNome.setText("");
-                // cardLayout.show(...);
+                cardLayout.show(painelPrincipal,"TELA_CADASTRO");
 
-                // --- BLOCO CATCH (PEGAR O ERRO) ---
-                // Se o 'gerenciador' lançar a ClinicaException, o código cai aqui.
             } catch (ClinicaException erro) {
-
-                // Aqui mostramos o aviso de ERRO (ícone de 'X' vermelho).
-                // erro.getMessage() vai pegar aquele texto "Falha ao salvar..." que escrevemos antes.
-                JOptionPane.showMessageDialog(null,
-                        erro.getMessage(),
-                        "Erro no Sistema",
-                        JOptionPane.ERROR_MESSAGE);
-
+                JOptionPane.showMessageDialog(null,erro.getMessage(),"Erro no Sistema",JOptionPane.ERROR_MESSAGE);
             } catch (NumberFormatException erroNumero) {
-                // Bônus: Se o usuário digitar "abc" no campo idade
-                JOptionPane.showMessageDialog(null,
-                        "Por favor, digite uma idade válida (apenas números).",
-                        "Erro de Digitação",
-                        JOptionPane.WARNING_MESSAGE);
+                //Se o usuário digitar letras no campo idade
+                JOptionPane.showMessageDialog(null,"Por favor, digite uma idade válida (apenas números).","Erro de Digitação",JOptionPane.WARNING_MESSAGE);
             }
         });
 
