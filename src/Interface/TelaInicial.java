@@ -1,23 +1,21 @@
 package Interface;
 
-import java.awt.*;
-
-import javax.print.attribute.standard.MediaSize.NA;
-import javax.swing.*;
-
 import Controlador.GerenciadorClinica;
 import Modelo.ClinicaException;
+import Modelo.Medico;
 import Modelo.Paciente;
+import java.awt.*;
+import javax.swing.*;
 
 public class TelaInicial extends JFrame {
 
     // O CardLayout é pra gerenciar a troca entre cadastro e login
-    private CardLayout cardLayout;
-    private JPanel painelPrincipal;
+    private final CardLayout cardLayout;
+    private final JPanel painelPrincipal;
 
-    private GerenciadorClinica gerenciador;
-    private java.util.ArrayList<Paciente> listaDePacientes; //Tem que tar escrito o java util pros botoes funcionarem
-    private java.util.ArrayList<Modelo.Medico> listaDeMedicos;
+    private final GerenciadorClinica gerenciador;
+    private final java.util.ArrayList<Paciente> listaDePacientes; //Tem que tar escrito o java util pros botoes funcionarem
+    private final java.util.ArrayList<Medico> listaDeMedicos;
 
     public TelaInicial() {
         // config basica da janela
@@ -30,7 +28,7 @@ public class TelaInicial extends JFrame {
         cardLayout = new CardLayout();
         painelPrincipal = new JPanel(cardLayout);
         gerenciador = new GerenciadorClinica();
-        
+
         // Carrega os dados dos arquivos assim que a janela abre
         listaDePacientes = gerenciador.carregarArquivoPacientes();
         listaDeMedicos = gerenciador.carregarArquivoMedicos();
@@ -43,65 +41,108 @@ public class TelaInicial extends JFrame {
         painelPrincipal.add(cartaLogin, "TELA_LOGIN");
         painelPrincipal.add(cartaCadastro, "TELA_CADASTRO");
         add(painelPrincipal);
-        
+
         // mostra a primeira tela
         cardLayout.show(painelPrincipal, "TELA_LOGIN");
     }
 
     // ------------------- metodos pra desenhar as telas -------------------
-
-    private JPanel criarPainelLogin() {
+   private JPanel criarPainelLogin() {
         JPanel painel = new JPanel();
-        painel.setLayout(new BoxLayout(painel, BoxLayout.Y_AXIS)); //pra empilhar verticalmente
-        painel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 40)); //margem
+        painel.setLayout(new BoxLayout(painel, BoxLayout.Y_AXIS));
+        painel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Título
         JLabel titulo = new JLabel("Clínica Face");
         titulo.setFont(new Font("Arial", Font.BOLD, 24));
         titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        painel.add(titulo);
+        painel.add(Box.createVerticalStrut(20));
 
-        // Radio Button é pra escolher entre medico ou paciente
+        // Seleção do tipo
+        JPanel linhaTipo = new JPanel(new FlowLayout(FlowLayout.CENTER)); // FOI USADO FLOW LAYOUT PQ FICARIA MAIS ADEQUADO PARA WINDOWS, APESAR DO LABCOMP SER LINUX
         JRadioButton radioMedico = new JRadioButton("Médico");
         JRadioButton radioPaciente = new JRadioButton("Paciente");
-        // Pra garantir que eles não serao apertados juntos, cria um grupo (tipo alternativas)
+        
+        // Grupo para garantir que só marca um
         ButtonGroup grupo = new ButtonGroup();
         grupo.add(radioMedico);
         grupo.add(radioPaciente);
-        // Alinha
-        radioMedico.setAlignmentX(LEFT_ALIGNMENT);
-        radioPaciente.setAlignmentX(LEFT_ALIGNMENT);
-        
-        // Campos
+        radioPaciente.setSelected(true); // Começa com paciente marcado
+
+        linhaTipo.add(radioMedico);
+        linhaTipo.add(radioPaciente);
+        painel.add(linhaTipo);
+
+        // Campo de user/login
+        JPanel linhaUser = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JTextField txtUser = new JTextField();
+        txtUser.setPreferredSize(new Dimension(200, 25));
+        linhaUser.add(new JLabel("Login: "));
+        linhaUser.add(txtUser);
+        painel.add(linhaUser);
+
+        // Campo Senha
+        JPanel linhaSenha = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPasswordField txtSenha = new JPasswordField();
-        
-        // Botões basicos
-        JButton btnLogin = new JButton("Login");
-        JButton btnIrParaCadastro = new JButton("Não possuo Cadastro");
-        JButton btnSair = new JButton("Sair");
-        btnSair.setAlignmentX(LEFT_ALIGNMENT);
-
-        AJEITAR ALINHAMENTO INTERFACE PQ AINDA NAO TA Q NEM NA FT
-
-        // Pra trocar pro "Não tenho cadastro"
-        btnIrParaCadastro.addActionListener(e -> cardLayout.show(painelPrincipal, "TELA_CADASTRO"));
-        
-        // Pra sair
-        btnSair.addActionListener(e -> System.exit(0));
-
-        // Adicionando os componentes no painel principal
-        painel.add(titulo);
-        painel.add(Box.createVerticalStrut(20)); // Espaço
-        painel.add(radioMedico);
-        painel.add(radioPaciente);
-        painel.add(new JLabel("User:"));
-        painel.add(txtUser);
-        painel.add(new JLabel("Senha:"));
-        painel.add(txtSenha);
+        txtSenha.setPreferredSize(new Dimension(200, 25));
+        linhaSenha.add(new JLabel("Senha: "));
+        linhaSenha.add(txtSenha);
+        painel.add(linhaSenha);
         painel.add(Box.createVerticalStrut(20));
-        painel.add(btnLogin);
-        painel.add(btnIrParaCadastro); // Botão de troca
-        painel.add(btnSair);
+
+        // Botões
+        JPanel linhaBotoes = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton btnLogin = new JButton("Entrar");
+        JButton btnIrParaCadastro = new JButton("Cadastrar Paciente");
+        JButton btnSair = new JButton("Sair");
+
+        linhaBotoes.add(btnLogin);
+        linhaBotoes.add(btnIrParaCadastro);
+        linhaBotoes.add(btnSair);
+        painel.add(linhaBotoes);
+
+        // Ação do botão de login
+        btnLogin.addActionListener(e -> {
+            String loginDigitado = txtUser.getText().toUpperCase();
+            String senhaDigitada = new String(txtSenha.getPassword()).toUpperCase(); 
+
+            if (radioPaciente.isSelected()) { // Procura o login na lista de pacientes
+                boolean achou = false;
+                for (Paciente p : listaDePacientes) {
+                    if (p.getLogin().equals(loginDigitado) && p.getSenha().equals(senhaDigitada)) {
+                        achou = true;
+                        JOptionPane.showMessageDialog(null, "Bem-vindo(a), " + p.getNome() + "!");
+                        
+                        new TelaPrincipal(p, gerenciador).setVisible(true); // Abre a tela principal passando o paciente
+                        dispose(); // Fecha a tela de login inicial
+
+                        break;
+                    }
+                }
+                if (!achou) {
+                    JOptionPane.showMessageDialog(null, "Login ou Senha incorretos", "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+
+            } else {
+                 boolean achou = false;
+                 for (Medico m : listaDeMedicos) {
+                    if (m.getLogin().equals(loginDigitado) && m.getSenha().equals(senhaDigitada)) {
+                        achou = true;
+                        JOptionPane.showMessageDialog(null, "Olá, Dr(a). " + m.getNome());
+                        
+                        new TelaPrincipal(m, gerenciador).setVisible(true); // Abre a principal passando o medico
+                        dispose(); // Fecha a tela de login
+                        
+                        break;
+                    }
+                }
+                if (!achou) JOptionPane.showMessageDialog(null, "Médico não encontrado.", "Erro", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        btnIrParaCadastro.addActionListener(e -> cardLayout.show(painelPrincipal, "TELA_CADASTRO"));
+        btnSair.addActionListener(e -> System.exit(0));
 
         return painel;
     }
@@ -109,61 +150,113 @@ public class TelaInicial extends JFrame {
     private JPanel criarPainelCadastro() {
         JPanel painel = new JPanel();
         painel.setLayout(new BoxLayout(painel, BoxLayout.Y_AXIS));
-        painel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        painel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel titulo = new JLabel("Cadastro - Clínica Face");
         titulo.setFont(new Font("Arial", Font.BOLD, 20));
         titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        // Pega os textos pra salvar no arquivo
+        painel.add(titulo);
+        painel.add(Box.createVerticalStrut(20));
+
+        // Linha Nome
+        JPanel linhaNome = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JTextField txtNome = new JTextField();
-        JTextField txtLogin = new JTextField();
-        JPasswordField txtSenha = new JPasswordField();
+        txtNome.setPreferredSize(new Dimension(250, 25));
+        linhaNome.add(new JLabel("Nome Completo:"));
+        linhaNome.add(txtNome);
+        painel.add(linhaNome);
+
+        // Linha Idade
+        JPanel linhaIdade = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JTextField txtIdade = new JTextField();
+        txtIdade.setPreferredSize(new Dimension(50, 25)); // Campo menor pra idade
+        linhaIdade.add(new JLabel("Idade:"));
+        linhaIdade.add(txtIdade);
+        painel.add(linhaIdade);
 
-        // Adiciona eles visualmente no painel
-        painel.add(new JLabel("Nome Completo:"));
-        painel.add(txtNome);
+        // Linha Login
+        JPanel linhaLogin = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JTextField txtLogin = new JTextField();
+        txtLogin.setPreferredSize(new Dimension(150, 25));
+        linhaLogin.add(new JLabel("Login de Acesso:"));
+        linhaLogin.add(txtLogin);
+        painel.add(linhaLogin);
 
-        painel.add(new JLabel("Idade:"));
-        painel.add(txtIdade);
+        // Linha Senha
+        JPanel linhaSenha = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JTextField txtSenha = new JTextField(); // Não é password field pq se não o user não veria a senha que ele digita
+        txtSenha.setPreferredSize(new Dimension(150, 25));
+        linhaSenha.add(new JLabel("Senha:"));
+        linhaSenha.add(txtSenha);
+        painel.add(linhaSenha);
 
-        painel.add(new JLabel("Login de Acesso:"));
-        painel.add(txtLogin);
+        painel.add(Box.createVerticalStrut(5));
 
-        painel.add(new JLabel("Senha:"));
-        painel.add(txtSenha);
+        // Linha Plano
+        JPanel linhaPlano = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        // Logica pra pegar o plano ou dar null:
+        JCheckBox chkTemPlano = new JCheckBox("Possuo Plano de Saúde");
+        JTextField txtNomePlano = new JTextField();
+        txtNomePlano.setPreferredSize(new Dimension(150, 25));
+        txtNomePlano.setEnabled(false); // Começa desligado
+
+        // Checando a existencia do plano
+        chkTemPlano.addActionListener(n -> {
+            txtNomePlano.setEnabled(chkTemPlano.isSelected());
+            if (!chkTemPlano.isSelected()) {
+                txtNomePlano.setText(""); // Limpa se desmarcar
+            }
+        });
+
+        linhaPlano.add(chkTemPlano);
+        linhaPlano.add(new JLabel("Nome do Plano:"));
+        linhaPlano.add(txtNomePlano);
+        painel.add(linhaPlano);
 
         painel.add(Box.createVerticalStrut(20));
+
+        JPanel linhaBotoes = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
         JButton btnCadastrar = new JButton("Cadastrar");
         //Logica do botão de cadastrar 
         btnCadastrar.addActionListener(e -> {
-    
+
             try {
                 String nome = txtNome.getText();
                 String login = txtLogin.getText();
-                String senha = new String(txtSenha.getPassword());
-                int idade = Integer.parseInt(txtIdade.getText()); // Cuidado: isso pode dar erro se digitar letras!
-                String plano = null; FAlTANDO IMPLEMENTAR A LOGICA COMPLETA PARA ESSE PLANO
-                
+                String senha = txtSenha.getText().toUpperCase();
+                int idade = Integer.parseInt(txtIdade.getText());
+                String plano = null;
+                if (chkTemPlano.isSelected()) {
+                    plano = txtNomePlano.getText();
+                    if (plano.isEmpty()) { // Pra não deixar salvar plano com nome vazio
+                        JOptionPane.showMessageDialog(null, "Digite o nome do plano!");
+                        return;
+                    }
+                }
 
                 Paciente novoPaciente = new Paciente(nome, login, senha, plano, idade);
                 listaDePacientes.add(novoPaciente);
                 gerenciador.salvarArquivoPacientes(listaDePacientes);
 
                 // Se chegou aqui, é pq deu certo, ai ele puxa um painel com o retorno positivo
-                JOptionPane.showMessageDialog(null,"Paciente cadastrado com sucesso!","Sucesso",JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Paciente cadastrado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
 
-                // Opcional: Limpar os campos ou voltar para o login
+                // Pra limpar todos as caixas do cadastro apos cadastrar
                 txtNome.setText("");
-                cardLayout.show(painelPrincipal,"TELA_CADASTRO");
+                txtLogin.setText("");
+                txtSenha.setText("");
+                txtIdade.setText("");
+                txtNomePlano.setText("");
+                
+                cardLayout.show(painelPrincipal, "TELA_CADASTRO");
 
             } catch (ClinicaException erro) {
-                JOptionPane.showMessageDialog(null,erro.getMessage(),"Erro no Sistema",JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, erro.getMessage(), "Erro no Sistema", JOptionPane.ERROR_MESSAGE);
             } catch (NumberFormatException erroNumero) {
                 //Se o usuário digitar letras no campo idade
-                JOptionPane.showMessageDialog(null,"Por favor, digite uma idade válida (apenas números).","Erro de Digitação",JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Por favor, digite uma idade válida (apenas números).", "Erro de Digitação", JOptionPane.WARNING_MESSAGE);
             }
         });
 
@@ -172,21 +265,17 @@ public class TelaInicial extends JFrame {
 
         // Pra voltar pro login
         btnVoltarLogin.addActionListener(e -> cardLayout.show(painelPrincipal, "TELA_LOGIN"));
-        
+
         btnSair.addActionListener(e -> System.exit(0));
 
-        painel.add(titulo);
-        painel.add(Box.createVerticalStrut(20));
-        painel.add(btnCadastrar);
-        painel.add(btnVoltarLogin); // Botão de troca
-        painel.add(btnSair);
+        // Adiciona botões na linha auxiliar
+        linhaBotoes.add(btnCadastrar);
+        linhaBotoes.add(btnVoltarLogin);
+        linhaBotoes.add(btnSair);
+
+        // Adiciona a linha de botões no painel principal
+        painel.add(linhaBotoes);
 
         return painel;
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new TelaInicial().setVisible(true);
-        });
     }
 }
