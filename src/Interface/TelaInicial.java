@@ -27,9 +27,9 @@ public class TelaInicial extends JFrame {
         // inicializa o cardlayout e o painel principal
         cardLayout = new CardLayout();
         painelPrincipal = new JPanel(cardLayout);
-        gerenciador = new GerenciadorClinica();
-
+        
         // Carrega os dados dos arquivos assim que a janela abre
+        gerenciador = new GerenciadorClinica();
         listaDePacientes = gerenciador.carregarArquivoPacientes();
         listaDeMedicos = gerenciador.carregarArquivoMedicos();
 

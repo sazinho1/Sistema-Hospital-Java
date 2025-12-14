@@ -10,12 +10,22 @@ public class Medico extends Usuario{
     public Medico (String nome,String login, String senha, String especialidade, String planoSaude){
         super(nome, login, senha, planoSaude);
         this.especialidade = especialidade;
+        this.agendaConsultas = new ArrayList<>();
     }
+
     public String getEspecialidade() {
         return especialidade;
     }
-
     public void setEspecialidade(String especialidade) {
         this.especialidade = especialidade;
+    }
+    public ArrayList<Consulta> getAgendaConsultas() {
+        return agendaConsultas;
+    }
+    public void setAgendaConsultas(ArrayList<Consulta> agendaConsultas) {
+        this.agendaConsultas = agendaConsultas;
+    }
+    public void adicionarConsulta(Consulta c){
+        agendaConsultas.add(c);
     }
 }

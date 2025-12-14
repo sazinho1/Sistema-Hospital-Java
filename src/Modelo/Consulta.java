@@ -3,18 +3,26 @@ package Modelo;
 public class Consulta { 
     private Medico medicoAtual;
     private Paciente pacienteConsultado;
-    private int dataHora;
-    private String Status; //(Agendada, Finalizada, Cancelada)
-    //private Relatorio (sintomas/tratamento), 
+    private String dataConsulta; // Ex. 19/12/2025
+    
+    private String status; //(Agendada, Finalizada, Cancelada)
+    private String Relatorio; //(sintomas/tratamento), 
     //private Avaliacao (nota/texto).
-
-
-    //Getters e Setters
-    public Medico getMedicoAtual() {
-        return medicoAtual;
+    
+    // Construtor pra facilitar criar consultas
+    public Consulta(Medico medico, Paciente paciente, String data) {
+        this.medicoAtual = medico;
+        this.pacienteConsultado = paciente;
+        this.dataConsulta = data;
+        this.status = "Agendada";
     }
-    public void setMedicoAtual(Medico medicoAtual) {
-        this.medicoAtual = medicoAtual;
+    
+    //Getters e Setters
+    public Medico getMedicoAtual() { 
+        return medicoAtual; 
+    }
+    public void setMedicoAtual(Medico medicoAtual) { 
+        this.medicoAtual = medicoAtual; 
     }
     public Paciente getPacienteConsultado() {
         return pacienteConsultado;
@@ -22,16 +30,22 @@ public class Consulta {
     public void setPacienteConsultado(Paciente pacienteConsultado) {
         this.pacienteConsultado = pacienteConsultado;
     }
-    public int getDataHora() {
-        return dataHora;
+    public String getDataConsulta() {
+        return dataConsulta;
     }
-    public void setDataHora(int dataHora) {
-        this.dataHora = dataHora;
+    public void setDataConsulta(String dataConsulta) {
+        this.dataConsulta = dataConsulta;
     }
     public String getStatus() {
-        return Status;
+        return status;
     }
     public void setStatus(String status) {
-        Status = status;
+        this.status = status;
+    }
+    public String getRelatorio() {
+        return Relatorio;
+    }
+    public void setRelatorio(String Relatorio) {
+        this.Relatorio = Relatorio;
     }
 }

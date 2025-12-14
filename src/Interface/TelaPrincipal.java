@@ -15,6 +15,7 @@ public class TelaPrincipal extends JFrame {
 
     // Instancia do gerenciador para pegar os medicos e pacientes atualizados
     private GerenciadorClinica gerenciador;
+
     
     // Construtor pro paciente
     public TelaPrincipal(Paciente p, GerenciadorClinica ger) {
@@ -83,7 +84,7 @@ public class TelaPrincipal extends JFrame {
         // Faz o botão buscar funcionar
         btnBuscar.addActionListener(e -> preencherTabela.run());
 
-        // Ação do Botão Agendar (Faremos isso no próximo passo, por enquanto só avisa)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // Ação do Botão Agendar 
         btnRealizarAgendamento.addActionListener(e -> {
             int linhaSelecionada = tabelaMedicos.getSelectedRow();
             if (linhaSelecionada == -1) {
@@ -91,6 +92,26 @@ public class TelaPrincipal extends JFrame {
             } else {
                 String nomeMedico = (String) modelodaTabela.getValueAt(linhaSelecionada, 0);
                 JOptionPane.showMessageDialog(null, "Você escolheu: " + nomeMedico + "\n(Próximo passo: Abrir calendário)");
+            }
+
+            try {
+                // Agenda a consulta
+                boolean agendou = gerenciador.agendarConsulta(medicoAlvo, p, dataDigitada);
+
+                if (agendou) {
+                    JOptionPane.showMessageDialog(null, "Consulta Confirmada para " + dataDigitada + "!");
+                } else {
+                    // Se retornou false, é pq tem 3 ou mais
+                    int resp = JOptionPane.showConfirmDialog(null, "Agenda cheia para esta data! Deseja entrar na Lista de Espera?", "Lotado", JOptionPane.YES_NO_OPTION);
+                    
+                    if (resp == JOptionPane.YES_OPTION) {
+                        // Implementar lógica da fila de espera!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        JOptionPane.showMessageDialog(null, "Adicionado à lista de espera (Simulação).");
+
+                    }
+                }
+            } catch (ClinicaException ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar: " + ex.getMessage());
             }
         });
 
@@ -120,8 +141,58 @@ public class TelaPrincipal extends JFrame {
         abas = new JTabbedPane();
 
         // Aba da agenda do medico
-        JPanel painelAgenda = new JPanel();
-        painelAgenda.add(new JLabel("Aqui você verá sua agenda do dia..."));//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        JPanel painelAgenda = new JPanel(new BorderLayout());
+        
+        // Tabela com a agenda do medico
+        String[] colunas = {"Data", "Paciente", "Status"};
+        javax.swing.table.DefaultTableModel modeloAgenda = new javax.swing.table.DefaultTableModel(colunas, 0);
+        JTable tabelaAgenda = new JTable(modeloAgenda);
+        painelAgenda.add(new JScrollPane(tabelaAgenda), BorderLayout.CENTER);
+
+        // Botao pra atualizar a lista
+        JButton btnAtualizar = new JButton("Atualizar Lista");
+        painelAgenda.add(btnAtualizar, BorderLayout.NORTH);
+
+        // Lógica pra preencher a tabela
+        Runnable atualizarAgenda = () -> {
+            modeloAgenda.setRowCount(0); // Limpa
+            if (m.getAgendaConsultas() != null) {
+                for (Modelo.Consulta c : m.getAgendaConsultas()) { // Esse "Modelo" é pra garantir o package da classe Consulta
+                    // Adiciona na tabela
+                    Object[] linha = { c.getDataConsulta(), c.getPacienteConsultado().getNome(), c.getStatus() };
+                    modeloAgenda.addRow(linha);
+                }
+            }
+        };
+        // Carrega ao abrir
+        atualizarAgenda.run();
+        btnAtualizar.addActionListener(e -> atualizarAgenda.run());
+
+        // Botão de realizar a consulta
+        JButton btnRealizar = new JButton("Realizar Consulta (Finalizar)");
+        painelAgenda.add(btnRealizar, BorderLayout.SOUTH);
+            
+        btnRealizar.addActionListener(e -> {
+
+            int linha = tabelaAgenda.getSelectedRow();
+            // Pra se o doutor não selecionar a consulta
+            if (linha == -1) {
+                JOptionPane.showMessageDialog(null, "Selecione uma consulta para atender!");
+            }
+
+            // Realiza a consulta
+            realizarConsulta(m, linha);
+
+            // Salva tudo no arquivo
+            try {
+                gerenciador.salvarArquivoMedicos(gerenciador.getMedicos());
+                atualizarAgenda.run(); // Atualiza a tabela (muda o status pra finalizada)
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar: " + ex.getMessage());
+            }
+
+        });
+
         abas.addTab("Minha Agenda", painelAgenda);
         
         // Painel de admin para cadastro de novos médicos (SÓ É ABERTO COM A SENHA 012345)
@@ -171,7 +242,7 @@ public class TelaPrincipal extends JFrame {
             "ENDOCRINOLOGISTA", 
             "NUTRICIONISTA", 
             "INFECTOLOGISTA", 
-            "CIRURGIÃ(O) PLASTICA(O)"
+            "CIRURGIA(O) PLASTICA(O)"
         };
         // Pra criar a caixa de seleção com essas opções
         JComboBox<String> comboEspecialidade = new JComboBox<>(especialidades);
@@ -203,8 +274,8 @@ public class TelaPrincipal extends JFrame {
                     txtPlano.getText().toUpperCase()
                 );
 
-                gerenciador.carregarArquivoMedicos().add(novoMedico); 
-                gerenciador.salvarArquivoMedicos(gerenciador); // TA DANDO ERRO AQUI
+                gerenciador.getMedicos().add(novoMedico); 
+                gerenciador.salvarArquivoMedicos(gerenciador.getMedicos()); 
 
                 JOptionPane.showMessageDialog(null, "Médico(a) " + novoMedico.getNome() + " cadastrado(a)!");
 
@@ -214,6 +285,35 @@ public class TelaPrincipal extends JFrame {
                 JOptionPane.showMessageDialog(null, "Erro ao salvar: " + e.getMessage());
             }
         }
+    }
+
+    public void realizarConsulta(Medico medicoSelecionado, int linha){
+
+            
+            Modelo.Consulta consultaSelecionada = medicoSelecionado.getAgendaConsultas().get(linha); // Esse "Modelo" é pra garantir o package da classe Consulta
+
+            if (consultaSelecionada.getStatus().equals("Finalizada")) {
+                JOptionPane.showMessageDialog(null, "Essa consulta já foi finalizada!");
+                return;
+            }
+
+            // Abre janela pra escrever o relatório
+            String relatorio = JOptionPane.showInputDialog("Descreva sintomas e tratamento:");
+            if (relatorio != null && !relatorio.isEmpty()) {
+                consultaSelecionada.setRelatorio(relatorio);
+                consultaSelecionada.setStatus("Finalizada");
+                
+                // Logica do pagamento
+                String mensagemPagamento = "";
+                if (consultaSelecionada.getPacienteConsultado().getPlanoSaude() == null) {
+                    
+                } else {
+                    mensagemPagamento = "\n\nPaciente com plano: " + consultaSelecionada.getPacienteConsultado().getPlanoSaude() + "\nCobrança enviada ao convênio.";
+                }
+
+                JOptionPane.showMessageDialog(null, "Consulta Finalizada com Sucesso!" + mensagemPagamento);
+                
+            }
     }
 
     // Metodo pra configurar o basico da janela

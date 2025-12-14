@@ -1,6 +1,7 @@
 package Controlador;
 
 import Modelo.ClinicaException;
+import Modelo.Consulta;
 import Modelo.Medico;
 import Modelo.Paciente;
 import java.io.BufferedReader;
@@ -13,8 +14,13 @@ import java.util.ArrayList;
 
 public class GerenciadorClinica {
 
-    ArrayList<Medico> medicos;
-    ArrayList<Paciente> pacientes;
+    private ArrayList<Medico> medicos = new ArrayList<>();
+    private ArrayList<Paciente> pacientes = new ArrayList<>();
+
+    public GerenciadorClinica() {
+        this.medicos = carregarArquivoMedicos();
+        this.pacientes = carregarArquivoPacientes();
+    }
 
     //Getters e Setters
     public ArrayList<Medico> getMedicos() {
@@ -84,6 +90,7 @@ public class GerenciadorClinica {
             System.err.println("Erro ao ler arquivo: " + e.getMessage());
         }
 
+        this.medicos = listaCarregada; 
         return listaCarregada;
     }
 
@@ -159,7 +166,44 @@ public class GerenciadorClinica {
                 System.err.println("Erro ao ler arquivo: " + e.getMessage());
                 
             }
+            
+            this.pacientes = listaCarregada;
             return listaCarregada;
         }
+
+    // --------------------------CONSULTAS---------------------------
+
+    // A LOGICA DE CONSULTAS ESTÁ TODA AQUI E NÃO NUMA CLASSE "GERENCIADOR CONSULTAS" POIS GERARIA UMA DEPENDENCIA MUITO GRANDE
+    // DO GERENCIADOR CLINICA PARA CONSEGUIR LER E ESCREVER NOS ARQUIVOS, O QUE RESULTARIA NUM FEATURE ENVY 
+
+        public boolean agendarConsulta(Medico medico, Paciente paciente, String data) throws ClinicaException {
+        // Inicializa a consulta se estiver vazia
+        if (medico.getAgendaConsultas() == null) {
+            Consulta c = new Consulta(medico, paciente, data);
+            medico.adicionarConsulta(c);
+        }
+
+        // Conta quantas consultas já existem nesse dia
+        int consultasNoDia = 0;
+        for (Modelo.Consulta c : medico.getAgendaConsultas()) { // Esse "Modelo" é pra garantir o package da classe Consulta
+            // Adiciona 1 ao contador de consultas se a consulta for no dia
+            if (c.getDataConsulta().equals(data)) { 
+                consultasNoDia++;
+            }
+        }
+
+        if (consultasNoDia >= 3) {
+            return false; // Lotado
+        }
+
+        // Se tiver vaga, cria e salva
+        Modelo.Consulta novaConsulta = new Modelo.Consulta(medico, paciente, data); // Esse "Modelo" é pra garantir o package da classe Consulta
+        medico.getAgendaConsultas().add(novaConsulta);
+
+        // Salva a alteração no arquivo, já que o estado do médico foi mudado
+        salvarArquivoMedicos(this.medicos);
+        
+        return true;
+    }
 
     }
