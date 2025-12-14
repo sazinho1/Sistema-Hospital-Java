@@ -90,13 +90,15 @@ public class TelaPrincipal extends JFrame {
             if (linhaSelecionada == -1) {
                 JOptionPane.showMessageDialog(null, "Selecione um médico na tabela primeiro!");
             } else {
+                Modelo.Medico medicoSelecionado =
                 String nomeMedico = (String) modelodaTabela.getValueAt(linhaSelecionada, 0);
                 JOptionPane.showMessageDialog(null, "Você escolheu: " + nomeMedico + "\n(Próximo passo: Abrir calendário)");
+
             }
 
             try {
                 // Agenda a consulta
-                boolean agendou = gerenciador.agendarConsulta(medicoAlvo, p, dataDigitada);
+                boolean agendou = gerenciador.agendarConsulta(, p, dataDigitada);
 
                 if (agendou) {
                     JOptionPane.showMessageDialog(null, "Consulta Confirmada para " + dataDigitada + "!");
@@ -306,7 +308,29 @@ public class TelaPrincipal extends JFrame {
                 // Logica do pagamento
                 String mensagemPagamento = "";
                 if (consultaSelecionada.getPacienteConsultado().getPlanoSaude() == null) {
-                    
+                double valor = 0.0;
+    
+                    // Define o valor baseada na especialidade do Médico atual
+                    switch (medicoSelecionado .getEspecialidade().toUpperCase()) {
+                        case "DERMATOLOGISTA":
+                            valor = 300.00;
+                            break;
+                        case "ENDOCRINOLOGISTA":
+                            valor = 280.00;
+                            break;
+                        case "NUTRICIONISTA":
+                            valor = 200.00;
+                            break;
+                        case "INFECTOLOGISTA":
+                            valor = 350.00;
+                            break;
+                        case "CIRURGIÃ(O) PLASTICA(O)":
+                            valor = 500.00;
+                            break; // Cirurgia costuma ser mais cara
+                        default:
+                            valor = 250.00; // Valor padrão se não achar
+                    }
+
                 } else {
                     mensagemPagamento = "\n\nPaciente com plano: " + consultaSelecionada.getPacienteConsultado().getPlanoSaude() + "\nCobrança enviada ao convênio.";
                 }
