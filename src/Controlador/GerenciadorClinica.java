@@ -72,7 +72,12 @@ public class GerenciadorClinica {
             String linha;
 
             while ((linha = reader.readLine()) != null) {
-                String[] dados = linha.split(";"); // Pra quebrar a linha em todo ";" e separar os dados
+                String[] dados = linha.split(";", -1);
+
+                // Se a linha estiver quebrada ou incompleta, pula ela para não travar o programa
+                if (dados.length < 5) {
+                    continue;
+                } 
 
                 // A ordem aqui tem que ser igual a do salvar
                 String nome = dados[0];
