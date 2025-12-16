@@ -276,7 +276,7 @@ public class TelaPrincipal extends JFrame {
                 }
 
                 try {
-                    // CHAMA O GERENCIADOR PARA CANCELAR E RODAR A FILA DE ESPERA
+                    // chama o gerenciador pra cancelar (retorna true se cancelou e false se ja tava cancelada), além de rodar a fila de espera
                     boolean cancelou = gerenciador.cancelarConsulta(consultaAlvo);
                     if (cancelou) {
                         JOptionPane.showMessageDialog(null, "Consulta cancelada com sucesso!");
