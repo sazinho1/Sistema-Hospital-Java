@@ -7,7 +7,8 @@ public class Consulta {
     
     private String status; //(Agendada, Finalizada, Cancelada)
     private String Relatorio; //(sintomas/tratamento), 
-    //private Avaliacao (nota/texto).
+    private int nota; // 0 a 5
+    private String comentarioAvaliacao; // O texto que o paciente escreveu
     
     // Construtor pra facilitar criar consultas
     public Consulta(Medico medico, Paciente paciente, String data) {
@@ -15,6 +16,8 @@ public class Consulta {
         this.pacienteConsultado = paciente;
         this.dataConsulta = data;
         this.status = "Agendada";
+        this.nota = 0; // Inicializa com 0 (sem avaliação)
+        this.comentarioAvaliacao = "null";
     }
     
     //Getters e Setters
@@ -47,5 +50,17 @@ public class Consulta {
     }
     public void setRelatorio(String Relatorio) {
         this.Relatorio = Relatorio;
+    }
+    public int getNota() {
+        return nota;
+    }
+    public void setNota(int nota) {
+        this.nota = nota;
+    }
+    public String getComentarioAvaliacao() {
+        return comentarioAvaliacao;
+    }
+    public void setComentarioAvaliacao(String comentarioAvaliacao) {
+        this.comentarioAvaliacao = comentarioAvaliacao;
     }
 }

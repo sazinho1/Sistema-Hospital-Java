@@ -54,4 +54,32 @@ public class Medico extends Usuario {
         }
         return null;
     }
+
+    //Metodos da avaliação do médico
+    public double calcularMediaNotas() {
+        if (agendaConsultas == null || agendaConsultas.isEmpty()) return 0.0;
+        
+        double soma = 0;
+        int cont = 0;
+        for (Consulta c : agendaConsultas) {
+            if (c.getNota() > 0) { // Só conta se tiver nota
+                soma += c.getNota();
+                cont++;
+            }
+        }
+        if (cont == 0) return 0.0;
+        return soma / cont;
+    }
+
+    public ArrayList<String> getUltimasAvaliacoes() { // Retorna uma lista com os textos das avaliações
+        ArrayList<String> avaliacoes = new ArrayList<>();
+        if (agendaConsultas != null) {
+            for (Consulta c : agendaConsultas) {
+                if (c.getComentarioAvaliacao() != null && !c.getComentarioAvaliacao().equals("null") && !c.getComentarioAvaliacao().isEmpty()) {
+                    avaliacoes.add("★" + c.getNota() + ": " + c.getComentarioAvaliacao());
+                }
+            }
+        }
+        return avaliacoes;
+    }
 }

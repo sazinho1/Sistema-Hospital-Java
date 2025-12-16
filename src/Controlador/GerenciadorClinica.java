@@ -181,6 +181,7 @@ public class GerenciadorClinica {
 
     // A LOGICA DE CONSULTAS ESTÁ TODA AQUI E NÃO NUMA CLASSE "GERENCIADOR CONSULTAS" POIS GERARIA UMA DEPENDENCIA MUITO GRANDE
     // DO GERENCIADOR CLINICA PARA CONSEGUIR LER E ESCREVER NOS ARQUIVOS, O QUE RESULTARIA NUM FEATURE ENVY 
+
     public void salvarConsultas() throws ClinicaException {
         // Cria/Sobrescreve o ficheiro consultas.csv
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("consultas.csv", false))) {
@@ -188,17 +189,19 @@ public class GerenciadorClinica {
             for (Medico m : medicos) {
                 if (m.getAgendaConsultas() != null) {
                     for (Consulta c : m.getAgendaConsultas()) {
-
-                        // Pra evitar NullPointerException no relatório
+                        
                         String textoRelatorio = (c.getRelatorio() == null) ? "null" : c.getRelatorio();
+                        String textoComentario = (c.getComentarioAvaliacao() == null) ? "null" : c.getComentarioAvaliacao();
 
-                        // Formato: LOGIN_MEDICO;LOGIN_PACIENTE;DATA;STATUS;RELATORIO
-                        String linha = m.getLogin() + ";"
-                                + c.getPacienteConsultado().getLogin() + ";"
-                                + c.getDataConsulta() + ";"
-                                + c.getStatus() + ";"
-                                + textoRelatorio;
-
+                        // LOGIN_M;LOGIN_P;DATA;STATUS;RELATORIO;NOTA;COMENTARIO
+                        String linha = m.getLogin() + ";" + 
+                                       c.getPacienteConsultado().getLogin() + ";" + 
+                                       c.getDataConsulta() + ";" + 
+                                       c.getStatus() + ";" + 
+                                       textoRelatorio + ";" +
+                                       c.getNota() + ";" +
+                                       textoComentario;
+                        
                         writer.write(linha);
                         writer.newLine();
                     }
@@ -219,17 +222,22 @@ public class GerenciadorClinica {
             String linha;
             while ((linha = reader.readLine()) != null) {
                 String[] dados = linha.split(";");
-                // Verifica se a linha tem as 5 partes necessárias
-                if (dados.length < 5) {
-                    continue;
-                }
+                
+                // Se não tiver pelo menos 5 colunas, ignora
+                if (dados.length < 5) continue;
 
                 String loginMedico = dados[0];
                 String loginPaciente = dados[1];
                 String data = dados[2];
                 String status = dados[3];
                 String relatorio = dados[4];
-
+                
+                // leitura das avaliações (com o cuidado pra nao dar null pointer exception)
+                int nota = 0;
+                String comentario = "null";
+                if (dados.length >= 7) {
+                    try { nota = Integer.parseInt(dados[5]); } catch (Exception e) {}
+                    comentario = dados[6];
                 // Encontra o objeto Médico real pelo login
                 Medico medicoAlvo = null;
                 for (Medico m : this.medicos) {
@@ -253,15 +261,17 @@ public class GerenciadorClinica {
                     Consulta c = new Consulta(medicoAlvo, pacienteAlvo, data);
                     c.setStatus(status);
                     // Recupera o relatorio se for nulo
-                    if (!relatorio.equals("null")) {
-                        c.setRelatorio(relatorio);
-                    }
+                    if (!relatorio.equals("null")) c.setRelatorio(relatorio);
+                    
+                    // Seta os novos dados
+                    c.setNota(nota);
+                    if (!comentario.equals("null")) c.setComentarioAvaliacao(comentario);
+                    
                     medicoAlvo.adicionarConsulta(c);
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Erro ao carregar consultas: " + e.getMessage());
         }
+        } catch (IOException e) {System.err.println("Erro ao carregar consultas: " + e.getMessage());}
     }
 
 
