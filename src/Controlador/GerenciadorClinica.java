@@ -182,14 +182,14 @@ public class GerenciadorClinica {
     // A LOGICA DE CONSULTAS ESTÁ TODA AQUI E NÃO NUMA CLASSE "GERENCIADOR CONSULTAS" POIS GERARIA UMA DEPENDENCIA MUITO GRANDE
     // DO GERENCIADOR CLINICA PARA CONSEGUIR LER E ESCREVER NOS ARQUIVOS, O QUE RESULTARIA NUM FEATURE ENVY 
     public void salvarConsultas() throws ClinicaException {
+        // Cria/Sobrescreve o ficheiro consultas.csv
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("consultas.csv", false))) {
 
             for (Medico m : medicos) {
-                // Verifica se o médico tem consultas antes de tentar acessar
                 if (m.getAgendaConsultas() != null) {
                     for (Consulta c : m.getAgendaConsultas()) {
 
-                        // Tratamento simples para relatório nulo (evita erro na hora de escrever)
+                        // Pra evitar NullPointerException no relatório
                         String textoRelatorio = (c.getRelatorio() == null) ? "null" : c.getRelatorio();
 
                         // Formato: LOGIN_MEDICO;LOGIN_PACIENTE;DATA;STATUS;RELATORIO
@@ -219,7 +219,6 @@ public class GerenciadorClinica {
             String linha;
             while ((linha = reader.readLine()) != null) {
                 String[] dados = linha.split(";");
-
                 // Verifica se a linha tem as 5 partes necessárias
                 if (dados.length < 5) {
                     continue;
@@ -229,9 +228,9 @@ public class GerenciadorClinica {
                 String loginPaciente = dados[1];
                 String data = dados[2];
                 String status = dados[3];
-                String relatorioTexto = dados[4];
+                String relatorio = dados[4];
 
-                // Busca os objetos reais na memória
+                // Encontra o objeto Médico real pelo login
                 Medico medicoAlvo = null;
                 for (Medico m : this.medicos) {
                     if (m.getLogin().equalsIgnoreCase(loginMedico)) {
@@ -240,6 +239,7 @@ public class GerenciadorClinica {
                     }
                 }
 
+                // Encontra o objeto Paciente real pelo login
                 Paciente pacienteAlvo = null;
                 for (Paciente p : this.pacientes) {
                     if (p.getLogin().equalsIgnoreCase(loginPaciente)) {
@@ -248,17 +248,14 @@ public class GerenciadorClinica {
                     }
                 }
 
-                // Se achou os dois, recria a consulta
+                // Se encontrou os dois, recria a consulta e coloca na lista do médico
                 if (medicoAlvo != null && pacienteAlvo != null) {
                     Consulta c = new Consulta(medicoAlvo, pacienteAlvo, data);
                     c.setStatus(status);
-
-                    // Recupera o relatório se não for "null"
-                    if (!relatorioTexto.equals("null")) {
-                        c.setRelatorio(relatorioTexto);
+                    // Recupera o relatorio se for nulo
+                    if (!relatorio.equals("null")) {
+                        c.setRelatorio(relatorio);
                     }
-
-                    // Adiciona na agenda do médico
                     medicoAlvo.adicionarConsulta(c);
                 }
             }
@@ -266,6 +263,7 @@ public class GerenciadorClinica {
             System.err.println("Erro ao carregar consultas: " + e.getMessage());
         }
     }
+
 
     public boolean agendarConsulta(Medico medico, Paciente paciente, String data) throws ClinicaException {
         // Inicializa a consulta se estiver vazia
@@ -287,12 +285,9 @@ public class GerenciadorClinica {
             return false; // Lotado
         }
 
-        // Se tiver vaga, cria e salva
+        // Se tiver vaga, cria e salva a alteração no arquivo
         Modelo.Consulta novaConsulta = new Modelo.Consulta(medico, paciente, data); // Esse "Modelo" é pra garantir o package da classe Consulta
-        medico.getAgendaConsultas().add(novaConsulta);
-
-        // Salva a alteração no arquivo, já que o estado do médico foi mudado
-        salvarArquivoMedicos(this.medicos);
+        salvarConsultas();
 
         return true;
     }
@@ -316,7 +311,7 @@ public class GerenciadorClinica {
             }
 
             // salva
-            salvarArquivoMedicos(this.medicos);
+            salvarConsultas();
             return true;
         }
         return false;

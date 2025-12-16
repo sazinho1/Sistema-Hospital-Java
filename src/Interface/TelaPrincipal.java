@@ -308,6 +308,7 @@ public class TelaPrincipal extends JFrame {
         };
         // Carrega ao abrir
         atualizarAgenda.run();
+        btnAtualizar.addActionListener(e -> atualizarAgenda.run());
 
         // Botão de realizar a consulta
         JButton btnRealizar = new JButton("Realizar Consulta (Finalizar)");
@@ -453,6 +454,7 @@ public class TelaPrincipal extends JFrame {
         if (relatorio != null && !relatorio.isEmpty()) {
             consultaSelecionada.setRelatorio(relatorio);
             consultaSelecionada.setStatus("Finalizada");
+
             
             // Logica do pagamento
             String mensagemPagamento = "";
@@ -471,15 +473,14 @@ public class TelaPrincipal extends JFrame {
             } else {
                 mensagemPagamento = "\n\nPaciente com plano: " + consultaSelecionada.getPacienteConsultado().getPlanoSaude() + "\nCobrança enviada ao convênio.";
             }
-
+            
             JOptionPane.showMessageDialog(null, "Consulta Finalizada com Sucesso!" + mensagemPagamento);
             
             try {
-                // Se não salvar, quando fechar o programa a consulta volta a ser "Agendada"
-                gerenciador.salvarArquivoMedicos(gerenciador.getMedicos());
+                gerenciador.salvarConsultas();
             } catch (ClinicaException e) {
-                JOptionPane.showMessageDialog(null, "Erro ao salvar alteração: " + e.getMessage());
-            }
+                JOptionPane.showMessageDialog(null, "Erro ao salvar: " + e.getMessage());
+            }   
         }
     }
 
