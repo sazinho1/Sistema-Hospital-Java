@@ -241,4 +241,4 @@ public class GerenciadorClinica {
         m.adicionarNaEspera(data, p);
     }
 
-    }
+}

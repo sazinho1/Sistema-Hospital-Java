@@ -115,7 +115,7 @@ public class TelaPrincipal extends JFrame {
             // Pedindo a data
             String dataDigitada = JOptionPane.showInputDialog("Digite a data da consulta (DD/MM/AAAA):");
 
-            // Se o usuário cancelar ou deixar vazio, não faz nada
+             // Se o usuário cancelar ou deixar vazio, não faz nada
             if (dataDigitada == null || dataDigitada.isEmpty()) {
                 return;
             }
@@ -126,7 +126,7 @@ public class TelaPrincipal extends JFrame {
                 if (agendou) {
                     JOptionPane.showMessageDialog(null, "Consulta Confirmada para " + dataDigitada + "!");
                 } else {
-                    // Se retornou false, é pq tem 3 ou mais
+                     // Se retornou false, é pq tem 3 ou mais
                     int resp = JOptionPane.showConfirmDialog(null,
                             "Agenda cheia para esta data! Deseja entrar na Lista de Espera?",
                             "Lotado", JOptionPane.YES_NO_OPTION);
@@ -167,16 +167,17 @@ public class TelaPrincipal extends JFrame {
 
         painelBotoesSul.add(btnAtualizarMinhas);
         painelBotoesSul.add(btnCancelar);
+        painelBotoesSul.add(btnAvaliar);
         painelConsultas.add(painelBotoesSul, BorderLayout.SOUTH);
 
-        // Função para carregar as consultas DESTE paciente
+       // Função para carregar as consultas DESTE paciente
         Runnable carregarMinhasConsultas = () -> {
             modeloMinhas.setRowCount(0);
             // Varre todos os médicos para achar consultas deste paciente (p)
             for (Medico m : gerenciador.getMedicos()) {
                 if (m.getAgendaConsultas() != null) {
                     for (Consulta c : m.getAgendaConsultas()) {
-                        // Se a consulta é deste paciente logado
+                       // Se a consulta é deste paciente logado
                         if (c.getPacienteConsultado().getNome().equals(p.getNome())
                                 && c.getPacienteConsultado().getLogin().equals(p.getLogin())) {
 
@@ -198,7 +199,7 @@ public class TelaPrincipal extends JFrame {
         // Carrega logo ao abrir
         carregarMinhasConsultas.run();
 
-        // AÇÃO DO BOTÃO CANCELAR
+        // Ação do botão de cancelar
         btnCancelar.addActionListener(e -> {
             int linha = tabelaMinhas.getSelectedRow();
             if (linha == -1) {
@@ -239,6 +240,27 @@ public class TelaPrincipal extends JFrame {
                 } catch (ClinicaException ex) {
                     JOptionPane.showMessageDialog(null, "Erro: " + ex.getMessage());
                 }
+            }
+        });
+
+        // !
+        btnAvaliar.addActionListener(e -> {
+            int linha = tabelaMinhas.getSelectedRow();
+            if (linha == -1) {
+                JOptionPane.showMessageDialog(null, "Selecione uma consulta FINALIZADA para avaliar.");
+                return;
+            }
+            
+            String status = (String) modeloMinhas.getValueAt(linha, 3);
+            if (!status.equalsIgnoreCase("Finalizada")) {
+                JOptionPane.showMessageDialog(null, "Você só pode avaliar consultas que já aconteceram (Finalizadas)!");
+                return;
+            }
+
+            String notaStr = JOptionPane.showInputDialog("Dê uma nota de 1 a 5 para o atendimento:");
+            if(notaStr != null && !notaStr.isEmpty()){
+                JOptionPane.showMessageDialog(null, "Avaliação registrada! Obrigado.");
+                // Aqui você poderia salvar a nota no objeto Medico se quisesse ir além
             }
         });
 
@@ -300,7 +322,7 @@ public class TelaPrincipal extends JFrame {
                 return;
             }
 
-            // Verifica se a lista de consultas não está vazia (Segurança extra)
+           // Verifica se a lista de consultas não está vazia (Segurança extra)
             if (m.getAgendaConsultas() == null || m.getAgendaConsultas().isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Não há consultas na agenda.");
                 return;
@@ -374,7 +396,7 @@ public class TelaPrincipal extends JFrame {
             "INFECTOLOGISTA", 
             "CIRURGIA(O) PLASTICA(O)"
         };
-        // Pra criar a caixa de seleção com essas opções
+       // Pra criar a caixa de seleção com essas opções
         JComboBox<String> comboEspecialidade = new JComboBox<>(especialidades);
 
         // Montando o pop-up
@@ -395,7 +417,7 @@ public class TelaPrincipal extends JFrame {
                      return;
                 }
 
-                // Cria o medico propriamente dito
+               // Cria o medico propriamente dito
                 Medico novoMedico = new Medico(
                     txtNome.getText().toUpperCase(), 
                     txtLogin.getText().toUpperCase(), 

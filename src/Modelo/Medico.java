@@ -5,7 +5,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-public class Medico extends Usuario{
+public class Medico extends Usuario {
+
     private String especialidade;
     private ArrayList<Consulta> agendaConsultas;
 
@@ -14,10 +15,11 @@ public class Medico extends Usuario{
     private Map<String, Queue<Paciente>> listaDeEspera;
 
     //Getter, Setter e Construtor
-    public Medico (String nome,String login, String senha, String especialidade, String planoSaude){
+    public Medico(String nome, String login, String senha, String especialidade, String planoSaude) {
         super(nome, login, senha, planoSaude);
         this.especialidade = especialidade;
         this.agendaConsultas = new ArrayList<>();
+        this.listaDeEspera = new java.util.HashMap<>();
     }
 
     public String getEspecialidade() {
@@ -32,13 +34,14 @@ public class Medico extends Usuario{
     public void setAgendaConsultas(ArrayList<Consulta> agendaConsultas) {
         this.agendaConsultas = agendaConsultas;
     }
-    public void adicionarConsulta(Consulta c){
+    public void adicionarConsulta(Consulta c) {
         agendaConsultas.add(c);
     }
     public Map<String, Queue<Paciente>> getListaDeEspera() {
         return listaDeEspera;
     }
 
+    //Metodos da lista de espera
     public void adicionarNaEspera(String data, Paciente p) {
         // Se não tiver fila pra esse dia, cria uma
         this.listaDeEspera.putIfAbsent(data, new LinkedList<>());
