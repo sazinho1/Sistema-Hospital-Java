@@ -273,6 +273,7 @@ public class TelaPrincipal extends JFrame {
     // Construtor pra medico
     public TelaPrincipal(Medico m, GerenciadorClinica gerenciador) {
         configurarJanela();
+        this.gerenciador = gerenciador;
 
         JLabel lblBoasVindas = new JLabel("Painel Médico - Dr(a). " + m.getNome());
         lblBoasVindas.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));

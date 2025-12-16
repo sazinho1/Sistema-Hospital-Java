@@ -287,6 +287,8 @@ public class GerenciadorClinica {
 
         // Se tiver vaga, cria e salva a alteração no arquivo
         Modelo.Consulta novaConsulta = new Modelo.Consulta(medico, paciente, data); // Esse "Modelo" é pra garantir o package da classe Consulta
+        medico.getAgendaConsultas().add(novaConsulta); 
+        medico.adicionarConsulta(novaConsulta);
         salvarConsultas();
 
         return true;

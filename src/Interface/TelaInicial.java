@@ -30,8 +30,8 @@ public class TelaInicial extends JFrame {
         
         // Carrega os dados dos arquivos assim que a janela abre
         gerenciador = new GerenciadorClinica();
-        listaDePacientes = gerenciador.carregarArquivoPacientes();
-        listaDeMedicos = gerenciador.carregarArquivoMedicos();
+        listaDePacientes = gerenciador.getPacientes(); 
+        listaDeMedicos = gerenciador.getMedicos();
 
         // cria os paineis (cartas)
         JPanel cartaLogin = criarPainelLogin();
