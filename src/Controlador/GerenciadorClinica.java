@@ -211,4 +211,34 @@ public class GerenciadorClinica {
         return true;
     }
 
+    public boolean cancelarConsulta(Consulta consultaAlvo) throws ClinicaException {
+        Medico medico = consultaAlvo.getMedicoAtual();
+        String data = consultaAlvo.getDataConsulta();
+        
+        // Remove a consulta da agenda do médico
+        boolean removeu = medico.getAgendaConsultas().remove(consultaAlvo);
+        
+        if (removeu) {
+            // Verifica a Lista de Espera
+            Paciente pacienteEmEspera = medico.retirarDaEspera(data);
+            
+            if (pacienteEmEspera != null) {
+                // Se tinha alguém esperando, agenda automaticamente no lugar
+                Consulta novaConsulta = new Consulta(medico, pacienteEmEspera, data);
+                medico.adicionarConsulta(novaConsulta);
+                System.out.println("Alocação automática: " + pacienteEmEspera.getNome() + " assumiu a vaga de " + data);
+            }
+            
+            // salva
+            salvarArquivoMedicos(this.medicos);
+            return true;
+        }
+        return false;
+    }
+    
+    // Método auxiliar para adicionar na espera (chamado pela tela)
+    public void colocarNaListaDeEspera(Medico m, Paciente p, String data) {
+        m.adicionarNaEspera(data, p);
+    }
+
     }

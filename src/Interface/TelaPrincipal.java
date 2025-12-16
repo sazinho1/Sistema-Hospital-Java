@@ -58,6 +58,7 @@ public class TelaPrincipal extends JFrame {
         painelAgendar.add(painelBotao, BorderLayout.SOUTH);
 
         // Logica pra preencher a tabela
+        // Runnable é uma função executada num thread durante a execução (gemini falou pra usar -> tentei entender mas nn consegui e funcionou assim)
         Runnable preencherTabela = () -> {
             modelodaTabela.setRowCount(0); // Limpa a tabela
             String palavraDigitada = txtBusca.getText().toUpperCase();
@@ -131,8 +132,9 @@ public class TelaPrincipal extends JFrame {
                             "Lotado", JOptionPane.YES_NO_OPTION);
 
                     if (resp == JOptionPane.YES_OPTION) {
-                        // Implementar lógica da fila de espera!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        JOptionPane.showMessageDialog(null, "Adicionado à lista de espera (Simulação).");
+                        // Adiciona na estrutura de espera do médico
+                        gerenciador.colocarNaListaDeEspera(medicoAlvo, p, dataDigitada);
+                        JOptionPane.showMessageDialog(null, "Você entrou na lista de espera para o dia " + dataDigitada + ".\nSe alguém cancelar, você será encaixado automaticamente.");
                     }
                 }
             } catch (ClinicaException ex) {
@@ -143,11 +145,104 @@ public class TelaPrincipal extends JFrame {
         abas.addTab("Agendar Consulta", painelAgendar);
 
         // Aba de consultas
-        JPanel painelConsultas = new JPanel();
-        painelConsultas.add(new JLabel("Aqui aparecerão seus agendamentos..."));
-        abas.addTab("Minhas Consultas", painelConsultas);
+        JPanel painelConsultas = new JPanel(new BorderLayout());
 
-        add(abas, BorderLayout.CENTER);
+        // Colunas: Médico, Especialidade, Data, Status
+        String[] colunasMinhas = {"Médico", "Especialidade", "Data", "Status"};
+        DefaultTableModel modeloMinhas = new DefaultTableModel(colunasMinhas, 0) {
+            // Pra não poder mecher de lugar na interface
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
+        };
+        JTable tabelaMinhas = new JTable(modeloMinhas);
+        painelConsultas.add(new JScrollPane(tabelaMinhas), BorderLayout.CENTER);
+
+        // Painel de Botões (Cancelar e Avaliar)
+        JPanel painelBotoesSul = new JPanel();
+        JButton btnAtualizarMinhas = new JButton("Atualizar");
+        JButton btnCancelar = new JButton("Cancelar Selecionada");
+        JButton btnAvaliar = new JButton("Avaliar Médico"); // Implementar depois se der tempo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        painelBotoesSul.add(btnAtualizarMinhas);
+        painelBotoesSul.add(btnCancelar);
+        painelConsultas.add(painelBotoesSul, BorderLayout.SOUTH);
+
+        // Função para carregar as consultas DESTE paciente
+        Runnable carregarMinhasConsultas = () -> {
+            modeloMinhas.setRowCount(0);
+            // Varre todos os médicos para achar consultas deste paciente (p)
+            for (Medico m : gerenciador.getMedicos()) {
+                if (m.getAgendaConsultas() != null) {
+                    for (Consulta c : m.getAgendaConsultas()) {
+                        // Se a consulta é deste paciente logado
+                        if (c.getPacienteConsultado().getNome().equals(p.getNome())
+                                && c.getPacienteConsultado().getLogin().equals(p.getLogin())) {
+
+                            modeloMinhas.addRow(new Object[]{
+                                m.getNome(),
+                                m.getEspecialidade(),
+                                c.getDataConsulta(),
+                                c.getStatus()
+                            });
+                        }
+                    }
+                }
+            }
+        };
+
+        // Ação do Botão Atualizar
+        btnAtualizarMinhas.addActionListener(e -> carregarMinhasConsultas.run());
+
+        // Carrega logo ao abrir
+        carregarMinhasConsultas.run();
+
+        // AÇÃO DO BOTÃO CANCELAR
+        btnCancelar.addActionListener(e -> {
+            int linha = tabelaMinhas.getSelectedRow();
+            if (linha == -1) {
+                JOptionPane.showMessageDialog(null, "Selecione uma consulta para cancelar.");
+                return;
+            }
+
+            // Recuperar o objeto Consulta real é chatinho sem ID, vamos buscar pelo conteudo da linha
+            String nomeMedico = (String) modeloMinhas.getValueAt(linha, 0);
+            String data = (String) modeloMinhas.getValueAt(linha, 2);
+
+            // Busca a consulta no sistema
+            Consulta consultaAlvo = null;
+            for (Medico m : gerenciador.getMedicos()) {
+                if (m.getNome().equals(nomeMedico)) {
+                    for (Consulta c : m.getAgendaConsultas()) {
+                        if (c.getDataConsulta().equals(data) && c.getPacienteConsultado().getLogin().equals(p.getLogin())) {
+                            consultaAlvo = c;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (consultaAlvo != null) {
+                if (consultaAlvo.getStatus().equals("Finalizada")) {
+                    JOptionPane.showMessageDialog(null, "Não é possível cancelar consultas já finalizadas!");
+                    return;
+                }
+
+                try {
+                    // CHAMA O GERENCIADOR PARA CANCELAR E RODAR A FILA DE ESPERA
+                    boolean cancelou = gerenciador.cancelarConsulta(consultaAlvo);
+                    if (cancelou) {
+                        JOptionPane.showMessageDialog(null, "Consulta cancelada com sucesso!");
+                        carregarMinhasConsultas.run(); // Atualiza a tabela visual
+                    }
+                } catch (ClinicaException ex) {
+                    JOptionPane.showMessageDialog(null, "Erro: " + ex.getMessage());
+                }
+            }
+        });
+
+        abas.addTab("Minhas Consultas", painelConsultas);
 
         //
     }
