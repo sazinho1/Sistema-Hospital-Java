@@ -3,6 +3,7 @@ package Interface;
 import Controlador.GerenciadorClinica;
 import Modelo.*;
 import java.awt.*;
+import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -40,7 +41,8 @@ public class TelaPrincipal extends JFrame {
         painelAgendar.add(painelBusca, BorderLayout.NORTH);
 
         // Tabela de medicos em colunas
-        String[] colunas = {"Nome do Médico", "Especialidade", "Plano Atendido"};
+        String[] colunas = {"Nome do Médico", "Especialidade", "Plano Atendido", "Nota Média"};
+
         // O DefaultTableModel é pra guardar os dados da tabela
         DefaultTableModel modelodaTabela = new DefaultTableModel(colunas, 0) {
             @Override // Pra bloquear a edição das células
@@ -57,22 +59,65 @@ public class TelaPrincipal extends JFrame {
         painelBotao.add(btnRealizarAgendamento);
         painelAgendar.add(painelBotao, BorderLayout.SOUTH);
 
+        // Botão pra ver as avaliações dos médicos
+        JButton btnVerAvaliacoes = new JButton("Ver Avaliações e Detalhes");
+        painelBotao.add(btnVerAvaliacoes); // Adiciona no mesmo painel do botão agendar
+
+        btnVerAvaliacoes.addActionListener(e -> {
+            int linha = tabelaMedicos.getSelectedRow();
+            if (linha == -1) {
+                JOptionPane.showMessageDialog(null, "Selecione um médico na tabela para ver as avaliações!");
+                return;
+            }
+            
+            String nomeMedico = (String) modelodaTabela.getValueAt(linha, 0);
+            
+            // Busca o médico
+            Medico medicoAlvo = null;
+            for (Medico m : gerenciador.getMedicos()) {
+                if (m.getNome().equals(nomeMedico)) {
+                    medicoAlvo = m;
+                    break;
+                }
+            }
+            
+            if (medicoAlvo != null) {
+                // Monta o texto com as avaliações
+                StringBuilder info = new StringBuilder();
+                info.append("Dr(a). ").append(medicoAlvo.getNome()).append("\n");
+                info.append("Média Geral: ").append(String.format("%.1f", medicoAlvo.calcularMediaNotas())).append(" estrelas\n\n");
+                info.append("--- Últimas Avaliações ---\n");
+                
+                ArrayList<String> avaliacoes = medicoAlvo.getUltimasAvaliacoes();
+                if (avaliacoes.isEmpty()) {
+                    info.append("Nenhuma avaliação registrada ainda.");
+                } else {
+                    for (String av : avaliacoes) {
+                        info.append(av).append("\n");
+                    }
+                }
+                
+                JOptionPane.showMessageDialog(null, info.toString(), "Detalhes do Médico", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
         // Logica pra preencher a tabela
         // Runnable é uma função executada num thread durante a execução (gemini falou pra usar -> tentei entender mas nn consegui e funcionou assim)
         Runnable preencherTabela = () -> {
-            modelodaTabela.setRowCount(0); // Limpa a tabela
+            modelodaTabela.setRowCount(0);
             String palavraDigitada = txtBusca.getText().toUpperCase();
 
             for (Medico m : gerenciador.getMedicos()) {
-                // Logica pra pular o medico se ele tem o plano diferente em relação ao do paciente
                 if (p.getPlanoSaude() != null && !p.getPlanoSaude().equalsIgnoreCase(m.getPlanoSaude())) {
                     continue; 
                 }
 
-                // Filtro da busca
                 if (m.getNome().toUpperCase().contains(palavraDigitada) || m.getEspecialidade().toUpperCase().contains(palavraDigitada)) {
-                    Object[] linha = { m.getNome(), m.getEspecialidade(), m.getPlanoSaude() }; // Constroi a linha
-                    modelodaTabela.addRow(linha); // Add ela na tabela
+                    // Calcula a média
+                    String mediaFormatada = String.format("%.1f ★", m.calcularMediaNotas());
+                    
+                    Object[] linha = { m.getNome(), m.getEspecialidade(), m.getPlanoSaude(), mediaFormatada }; 
+                    modelodaTabela.addRow(linha);
                 }
             }
         };
@@ -163,7 +208,7 @@ public class TelaPrincipal extends JFrame {
         JPanel painelBotoesSul = new JPanel();
         JButton btnAtualizarMinhas = new JButton("Atualizar");
         JButton btnCancelar = new JButton("Cancelar Selecionada");
-        JButton btnAvaliar = new JButton("Avaliar Médico"); // Implementar depois se der tempo!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        JButton btnAvaliar = new JButton("Avaliar Médico"); 
 
         painelBotoesSul.add(btnAtualizarMinhas);
         painelBotoesSul.add(btnCancelar);
@@ -243,7 +288,7 @@ public class TelaPrincipal extends JFrame {
             }
         });
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // Ação do botão avaliar
         btnAvaliar.addActionListener(e -> {
             int linha = tabelaMinhas.getSelectedRow();
             if (linha == -1) {
@@ -256,13 +301,58 @@ public class TelaPrincipal extends JFrame {
                 JOptionPane.showMessageDialog(null, "Você só pode avaliar consultas que já aconteceram (Finalizadas)!");
                 return;
             }
+            
+            // Pega os dados da linha pra achar a consulta real
+            String nomeMedico = (String) modeloMinhas.getValueAt(linha, 0);
+            String data = (String) modeloMinhas.getValueAt(linha, 2);
+            
+            Consulta consultaAlvo = null;
+            // Busca a consulta no objeto (igual fizemos no cancelar)
+            for (Medico m : gerenciador.getMedicos()) {
+                if (m.getNome().equals(nomeMedico)) {
+                    for (Consulta c : m.getAgendaConsultas()) {
+                        if (c.getDataConsulta().equals(data) && c.getPacienteConsultado().getLogin().equals(p.getLogin())) {
+                            consultaAlvo = c;
+                            break;
+                        }
+                    }
+                }
+            }
 
-            String notaStr = JOptionPane.showInputDialog("Dê uma nota de 1 a 5 para o atendimento:");
-            if(notaStr != null && !notaStr.isEmpty()){
-                JOptionPane.showMessageDialog(null, "Avaliação registrada! Obrigado.");
-                // Aqui você poderia salvar a nota no objeto Medico se quisesse ir além
+            if (consultaAlvo != null) {
+                // Pergunta a nota
+                String[] opcoes = {"1", "2", "3", "4", "5"};
+                int nota = JOptionPane.showOptionDialog(null, "Classifique o atendimento:", "Avaliação",
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, opcoes, opcoes[4]);
+                
+                // O OptionDialog retorna o índice (0 a 4), então somamos +1 pra virar nota (1 a 5)
+                // Se fechar a janela, retorna -1
+                if (nota != -1) {
+                    int notaFinal = nota + 1;
+                    
+                    // Pergunta o comentário
+                    String texto = JOptionPane.showInputDialog("Deixe um comentário (opcional):");
+                    if (texto == null) texto = "";
+                    
+                    // Limpa o texto pra não quebrar o CSV
+                    texto = texto.replace(";", ",").replace("\n", " ");
+                    
+                    // Salva no objeto
+                    consultaAlvo.setNota(notaFinal);
+                    consultaAlvo.setComentarioAvaliacao(texto);
+                    
+                    // Salva no arquivo
+                    try {
+                        gerenciador.salvarConsultas();
+                        JOptionPane.showMessageDialog(null, "Avaliação registrada com sucesso!");
+                    } catch (ClinicaException ex) {
+                        JOptionPane.showMessageDialog(null, "Erro ao salvar: " + ex.getMessage());
+                    }
+                }
             }
         });
+
+        
 
         abas.addTab("Minhas Consultas", painelConsultas);
 
