@@ -207,7 +207,7 @@ public class TelaPrincipal extends JFrame {
                 return;
             }
 
-            // Recuperar o objeto Consulta real é chatinho sem ID, vamos buscar pelo conteudo da linha
+            // Recuperando o objeto Consulta pelo conteudo da linha
             String nomeMedico = (String) modeloMinhas.getValueAt(linha, 0);
             String data = (String) modeloMinhas.getValueAt(linha, 2);
 
@@ -243,7 +243,7 @@ public class TelaPrincipal extends JFrame {
             }
         });
 
-        // !
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         btnAvaliar.addActionListener(e -> {
             int linha = tabelaMinhas.getSelectedRow();
             if (linha == -1) {
@@ -266,7 +266,7 @@ public class TelaPrincipal extends JFrame {
 
         abas.addTab("Minhas Consultas", painelConsultas);
 
-        //
+        add(abas, BorderLayout.CENTER);
     }
 
 
@@ -439,55 +439,48 @@ public class TelaPrincipal extends JFrame {
         }
     }
 
-    public void realizarConsulta(Medico medicoSelecionado, int linha){
+    public void realizarConsulta(Medico medicoSelecionado, int linha) {
+        // Esse "Modelo" é pra garantir o package da classe Consulta
+        Modelo.Consulta consultaSelecionada = medicoSelecionado.getAgendaConsultas().get(linha); 
 
+        if (consultaSelecionada.getStatus().equals("Finalizada")) {
+            JOptionPane.showMessageDialog(null, "Essa consulta já foi finalizada!");
+            return;
+        }
+
+        // Abre janela pra escrever o relatório
+        String relatorio = JOptionPane.showInputDialog("Descreva sintomas e tratamento:");
+        if (relatorio != null && !relatorio.isEmpty()) {
+            consultaSelecionada.setRelatorio(relatorio);
+            consultaSelecionada.setStatus("Finalizada");
             
-            Modelo.Consulta consultaSelecionada = medicoSelecionado.getAgendaConsultas().get(linha); // Esse "Modelo" é pra garantir o package da classe Consulta
-
-            if (consultaSelecionada.getStatus().equals("Finalizada")) {
-                JOptionPane.showMessageDialog(null, "Essa consulta já foi finalizada!");
-                return;
-            }
-
-            // Abre janela pra escrever o relatório
-            String relatorio = JOptionPane.showInputDialog("Descreva sintomas e tratamento:");
-            if (relatorio != null && !relatorio.isEmpty()) {
-                consultaSelecionada.setRelatorio(relatorio);
-                consultaSelecionada.setStatus("Finalizada");
-                
-                // Logica do pagamento
-                String mensagemPagamento = "";
-                if (consultaSelecionada.getPacienteConsultado().getPlanoSaude() == null) {
+            // Logica do pagamento
+            String mensagemPagamento = "";
+            if (consultaSelecionada.getPacienteConsultado().getPlanoSaude() == null) {
                 double valor = 0.0;
-    
-                    // Define o valor baseada na especialidade do Médico atual
-                    switch (medicoSelecionado .getEspecialidade().toUpperCase()) {
-                        case "DERMATOLOGISTA":
-                            valor = 300.00;
-                            break;
-                        case "ENDOCRINOLOGISTA":
-                            valor = 280.00;
-                            break;
-                        case "NUTRICIONISTA":
-                            valor = 200.00;
-                            break;
-                        case "INFECTOLOGISTA":
-                            valor = 350.00;
-                            break;
-                        case "CIRURGIÃ(O) PLASTICA(O)":
-                            valor = 500.00;
-                            break; // Cirurgia costuma ser mais cara
-                        default:
-                            valor = 250.00; // Valor padrão se não achar
-                    }
-
-                } else {
-                    mensagemPagamento = "\n\nPaciente com plano: " + consultaSelecionada.getPacienteConsultado().getPlanoSaude() + "\nCobrança enviada ao convênio.";
+                // Define o valor baseada na especialidade do Médico atual
+                switch (medicoSelecionado.getEspecialidade().toUpperCase()) {
+                    case "DERMATOLOGISTA": valor = 300.00; break;
+                    case "ENDOCRINOLOGISTA": valor = 280.00; break;
+                    case "NUTRICIONISTA": valor = 200.00; break;
+                    case "INFECTOLOGISTA": valor = 350.00; break;
+                    case "CIRURGIA(O) PLASTICA(O)": valor = 500.00; break; 
+                    default: valor = 250.00; 
                 }
-
-                JOptionPane.showMessageDialog(null, "Consulta Finalizada com Sucesso!" + mensagemPagamento);
-                
+                mensagemPagamento = String.format("\n\nPACIENTE PARTICULAR!\nValor: R$ %.2f", valor);
+            } else {
+                mensagemPagamento = "\n\nPaciente com plano: " + consultaSelecionada.getPacienteConsultado().getPlanoSaude() + "\nCobrança enviada ao convênio.";
             }
+
+            JOptionPane.showMessageDialog(null, "Consulta Finalizada com Sucesso!" + mensagemPagamento);
+            
+            try {
+                // Se não salvar, quando fechar o programa a consulta volta a ser "Agendada"
+                gerenciador.salvarArquivoMedicos(gerenciador.getMedicos());
+            } catch (ClinicaException e) {
+                JOptionPane.showMessageDialog(null, "Erro ao salvar alteração: " + e.getMessage());
+            }
+        }
     }
 
     // Metodo pra configurar o basico da janela

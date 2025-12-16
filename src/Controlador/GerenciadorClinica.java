@@ -20,6 +20,7 @@ public class GerenciadorClinica {
     public GerenciadorClinica() {
         this.medicos = carregarArquivoMedicos();
         this.pacientes = carregarArquivoPacientes();
+        carregarConsultas();
     }
 
     //Getters e Setters
@@ -180,8 +181,93 @@ public class GerenciadorClinica {
 
     // A LOGICA DE CONSULTAS ESTÁ TODA AQUI E NÃO NUMA CLASSE "GERENCIADOR CONSULTAS" POIS GERARIA UMA DEPENDENCIA MUITO GRANDE
     // DO GERENCIADOR CLINICA PARA CONSEGUIR LER E ESCREVER NOS ARQUIVOS, O QUE RESULTARIA NUM FEATURE ENVY 
+    public void salvarConsultas() throws ClinicaException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("consultas.csv", false))) {
 
-        public boolean agendarConsulta(Medico medico, Paciente paciente, String data) throws ClinicaException {
+            for (Medico m : medicos) {
+                // Verifica se o médico tem consultas antes de tentar acessar
+                if (m.getAgendaConsultas() != null) {
+                    for (Consulta c : m.getAgendaConsultas()) {
+
+                        // Tratamento simples para relatório nulo (evita erro na hora de escrever)
+                        String textoRelatorio = (c.getRelatorio() == null) ? "null" : c.getRelatorio();
+
+                        // Formato: LOGIN_MEDICO;LOGIN_PACIENTE;DATA;STATUS;RELATORIO
+                        String linha = m.getLogin() + ";"
+                                + c.getPacienteConsultado().getLogin() + ";"
+                                + c.getDataConsulta() + ";"
+                                + c.getStatus() + ";"
+                                + textoRelatorio;
+
+                        writer.write(linha);
+                        writer.newLine();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new ClinicaException("Erro ao salvar o arquivo de consultas.", e);
+        }
+    }
+
+    public void carregarConsultas() {
+        File arquivo = new File("consultas.csv");
+        if (!arquivo.exists()) {
+            return; // Se não tem o arquivo, não faz nada
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(arquivo))) {
+            String linha;
+            while ((linha = reader.readLine()) != null) {
+                String[] dados = linha.split(";");
+
+                // Verifica se a linha tem as 5 partes necessárias
+                if (dados.length < 5) {
+                    continue;
+                }
+
+                String loginMedico = dados[0];
+                String loginPaciente = dados[1];
+                String data = dados[2];
+                String status = dados[3];
+                String relatorioTexto = dados[4];
+
+                // Busca os objetos reais na memória
+                Medico medicoAlvo = null;
+                for (Medico m : this.medicos) {
+                    if (m.getLogin().equalsIgnoreCase(loginMedico)) {
+                        medicoAlvo = m;
+                        break;
+                    }
+                }
+
+                Paciente pacienteAlvo = null;
+                for (Paciente p : this.pacientes) {
+                    if (p.getLogin().equalsIgnoreCase(loginPaciente)) {
+                        pacienteAlvo = p;
+                        break;
+                    }
+                }
+
+                // Se achou os dois, recria a consulta
+                if (medicoAlvo != null && pacienteAlvo != null) {
+                    Consulta c = new Consulta(medicoAlvo, pacienteAlvo, data);
+                    c.setStatus(status);
+
+                    // Recupera o relatório se não for "null"
+                    if (!relatorioTexto.equals("null")) {
+                        c.setRelatorio(relatorioTexto);
+                    }
+
+                    // Adiciona na agenda do médico
+                    medicoAlvo.adicionarConsulta(c);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Erro ao carregar consultas: " + e.getMessage());
+        }
+    }
+
+    public boolean agendarConsulta(Medico medico, Paciente paciente, String data) throws ClinicaException {
         // Inicializa a consulta se estiver vazia
         if (medico.getAgendaConsultas() == null) {
             Consulta c = new Consulta(medico, paciente, data);
@@ -192,7 +278,7 @@ public class GerenciadorClinica {
         int consultasNoDia = 0;
         for (Modelo.Consulta c : medico.getAgendaConsultas()) { // Esse "Modelo" é pra garantir o package da classe Consulta
             // Adiciona 1 ao contador de consultas se a consulta for no dia
-            if (c.getDataConsulta().equals(data)) { 
+            if (c.getDataConsulta().equals(data)) {
                 consultasNoDia++;
             }
         }
@@ -207,35 +293,35 @@ public class GerenciadorClinica {
 
         // Salva a alteração no arquivo, já que o estado do médico foi mudado
         salvarArquivoMedicos(this.medicos);
-        
+
         return true;
     }
 
     public boolean cancelarConsulta(Consulta consultaAlvo) throws ClinicaException {
         Medico medico = consultaAlvo.getMedicoAtual();
         String data = consultaAlvo.getDataConsulta();
-        
+
         // Remove a consulta da agenda do médico
         boolean removeu = medico.getAgendaConsultas().remove(consultaAlvo);
-        
+
         if (removeu) {
             // Verifica a Lista de Espera
             Paciente pacienteEmEspera = medico.retirarDaEspera(data);
-            
+
             if (pacienteEmEspera != null) {
                 // Se tinha alguém esperando, agenda automaticamente no lugar
                 Consulta novaConsulta = new Consulta(medico, pacienteEmEspera, data);
                 medico.adicionarConsulta(novaConsulta);
                 System.out.println("Alocação automática: " + pacienteEmEspera.getNome() + " assumiu a vaga de " + data);
             }
-            
+
             // salva
             salvarArquivoMedicos(this.medicos);
             return true;
         }
         return false;
     }
-    
+
     // Método auxiliar para adicionar na espera (chamado pela tela)
     public void colocarNaListaDeEspera(Medico m, Paciente p, String data) {
         m.adicionarNaEspera(data, p);
